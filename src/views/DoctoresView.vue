@@ -38,22 +38,22 @@ const guardarDoctor = async (datos) => {
       await doctorStore.createDoctor(datos)
       alert('Doctor creado correctamente')
     }
-    
+
     await doctorStore.fetchDoctors()
     showModal.value = false
     doctorEditar.value = null
   } catch (error) {
     console.error('Error:', error)
-    
+
     // Mostrar errores específicos de validación
     if (error.response?.status === 422) {
       const errores = error.response.data.errors
       let mensaje = 'Errores de validación:\n'
-      
+
       for (const campo in errores) {
         mensaje += `\n• ${errores[campo].join(', ')}`
       }
-      
+
       alert(mensaje)
     } else {
       alert('Error al guardar el doctor: ' + (error.message || 'Error desconocido'))
@@ -84,19 +84,13 @@ onMounted(() => {
       ⚠️ {{ doctorStore.error }}
     </div>
 
-    <DoctorList 
-      v-else
-      :doctors="doctorStore.doctors"
-      @editar="editarDoctor"
-      @eliminar="eliminarDoctor"
-    />
+    <!-- nombre componente DoctorList ,:doctors paso dato al hijo doctorlist, : es un v-bind 
+     ,doctors  es el props del hijo que es un array,
+     @eliminar son los eventos que estan a la escucha los cuales los defini como emits en el componente hijo-->
+    <DoctorList v-else :doctors="doctorStore.doctors" @editar="editarDoctor" @eliminar="eliminarDoctor" />
 
-    <DoctorForm 
-      v-if="showModal"
-      :doctor="doctorEditar"
-      @cerrar="showModal = false; doctorEditar = null"
-      @guardar="guardarDoctor"
-    />
+    <DoctorForm v-if="showModal" :doctor="doctorEditar" @cerrar="showModal = false; doctorEditar = null"
+      @guardar="guardarDoctor" />
   </div>
 </template>
 

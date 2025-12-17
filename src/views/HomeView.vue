@@ -10,20 +10,25 @@ import { RouterLink } from 'vue-router'
         <h3>👥 Pacientes</h3>
         <p>Gestiona la información de tus pacientes</p>
       </RouterLink>
-      
+
       <RouterLink to="/citas" class="card">
         <h3>📅 Citas</h3>
         <p>Administra tu agenda de citas</p>
       </RouterLink>
 
-       <RouterLink to="/doctores" class="card">
+      <RouterLink to="/doctores" class="card">
         <h3>👨‍⚕️ Doctores</h3>
         <p>Administra tu equipo médico</p>
       </RouterLink>
-      
+
       <RouterLink to="/tratamientos" class="card">
         <h3>💉 Tratamientos</h3>
         <p>Control de tratamientos activos</p>
+      </RouterLink>
+
+      <RouterLink to="/horas-tomadas" class="card">
+        <h3>💉 Horas Reservadas</h3>
+        <p>Control de horas Reservadas</p>
       </RouterLink>
     </div>
   </div>
@@ -50,7 +55,7 @@ h1 {
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s;
   text-decoration: none;
   color: inherit;
@@ -60,7 +65,7 @@ h1 {
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .card h3 {

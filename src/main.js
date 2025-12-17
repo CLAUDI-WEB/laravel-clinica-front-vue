@@ -9,6 +9,28 @@ import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import 'primeicons/primeicons.css'
 
+// Axios configuration
+import axios from 'axios'
+
+// Configuración de Axios para Laravel Sanctum
+axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.withCredentials = true
+axios.defaults.withXSRFToken = true
+axios.defaults.headers.common['Accept'] = 'application/json'
+axios.defaults.headers.common['Content-Type'] = 'application/json'
+
+// Interceptor para manejar errores de autenticación
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Redirigir al login si no está autenticado
+      router.push('/login')
+    }
+    return Promise.reject(error)
+  }
+)
+
 const app = createApp(App)
 const pinia = createPinia()
 

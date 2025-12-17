@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 // import axios from 'axios'
 import api from '@/services/api'
+import { useAuthStore } from './auth'
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 📦 STORE DE GESTIÓN DE CITAS
@@ -11,14 +12,14 @@ import api from '@/services/api'
 // 1. 'citas' = ID único del store (como un nombre de identificación)
 // 2. () => {} = función setup que define el contenido del store (Composition API)
 export const useCitasStore = defineStore('citas', () => {
-  
+
   // ═══════════════════════════════════════════════════════════════════════════
   // 📊 STATE - Variables Reactivas
   // ═══════════════════════════════════════════════════════════════════════════
   // Equivalente a "data()" en Options API
   // Se usan ref() para crear variables reactivas que pueden cambiar y
   // automáticamente actualizar la UI cuando se modifican
-  
+
   // Array que almacena todas las semanas del mes cargadas desde el backend
   // Estructura esperada: [
   //   { numero: 1, fecha_inicio: "2025-12-01", fecha_fin: "2025-12-07", dias: [...] },
@@ -26,38 +27,38 @@ export const useCitasStore = defineStore('citas', () => {
   //   ...
   // ]
   const semanas = ref([])
-  
+
   // Indicador booleano para mostrar spinners/loaders en la UI
   // true = mostrando loading, false = ocultar loading
   const loading = ref(false)
-  
+
   // Almacena mensajes de error si falla una petición al backend
   // null = sin errores, string = mensaje de error
   const error = ref(null)
-  
+
   // Año actualmente seleccionado (inicializa con el año actual del sistema)
   // Ejemplo: 2025
   const añoSeleccionado = ref(new Date().getFullYear())
-  
+
   // Mes actualmente seleccionado (1-12, inicializa con mes actual del sistema)
   // Ejemplo: 12 (diciembre)
   // Nota: JavaScript usa meses base 0, por eso sumamos 1
   const mesSeleccionado = ref(new Date().getMonth() + 1)
-  
+
   // Nombre del mes en español (recibido del backend)
   // Ejemplo: "diciembre", "enero", etc.
   const nombreMes = ref('')
-  
+
   // Número de la semana seleccionada (1, 2, 3, 4, etc.)
   // null = ninguna semana seleccionada
   // Se usa para saber qué semana está activa en el calendario
   const semanaSeleccionada = ref(null)
-  
+
   // Fecha de inicio de la semana seleccionada en formato ISO (YYYY-MM-DD)
   // Ejemplo: "2025-12-08" (lunes)
   // Se usa para filtros y peticiones al backend
   const fechaInicioSemana = ref(null)
-  
+
   // Fecha de fin de la semana seleccionada en formato ISO (YYYY-MM-DD)
   // Ejemplo: "2025-12-14" (domingo)
   // Se usa para filtros y peticiones al backend
@@ -68,12 +69,12 @@ export const useCitasStore = defineStore('citas', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // Equivalente a "computed" en Options API
   // Se recalculan automáticamente cuando cambian las variables de las que dependen
-  
+
   // Getter simple: retorna el array de semanas
   // Es un alias reactivo de semanas.value
   // Útil cuando quieres acceder a semanas de forma "computed" en otros componentes
   const semanasDelMes = computed(() => semanas.value)
-  
+
   // Getter complejo: filtra y retorna solo los días de la semana seleccionada
   // Se recalcula automáticamente cuando cambia:
   // - semanaSeleccionada.value
@@ -87,10 +88,10 @@ export const useCitasStore = defineStore('citas', () => {
   const diasDeLaSemanaSeleccionada = computed(() => {
     // Si no hay semana seleccionada, retornar array vacío
     if (!semanaSeleccionada.value) return []
-    
+
     // Buscar la semana completa en el array por su número
     const semana = semanas.value.find(s => s.numero === semanaSeleccionada.value)
-    
+
     // Retornar los días de esa semana o array vacío si no se encuentra
     return semana ? semana.dias : []
   })
@@ -100,7 +101,7 @@ export const useCitasStore = defineStore('citas', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   // Equivalente a "methods" en Options API
   // Son funciones que pueden ser síncronas o asíncronas y modifican el state
-  
+
   /**
    * 🔄 ACCIÓN: Cargar semanas desde el backend
    * 
@@ -141,34 +142,26 @@ export const useCitasStore = defineStore('citas', () => {
   async function cargarSemanas() {
     loading.value = true  // Activar indicador de carga (mostrar spinner)
     error.value = null    // Limpiar errores anteriores
-    
+
     try {
-      // Obtener token JWT de autenticación del localStorage
-      // Este token se guarda cuando el usuario inicia sesión
+
       const token = localStorage.getItem('token')
-      
-      // Hacer petición HTTP GET al endpoint de Laravel
-      // URL completa será: http://localhost:8000/api/citas/semanas?año=2025&mes=12
+
       const response = await api.get('citas/semanas', {
-        // Query parameters que se envían en la URL
         params: {
           año: añoSeleccionado.value,  // Ejemplo: 2025
           mes: mesSeleccionado.value   // Ejemplo: 12
         },
-        // Headers HTTP de la petición
         headers: {
           'Authorization': `Bearer ${token}`,  // Token JWT para autenticación
           'Accept': 'application/json'         // Esperar respuesta en JSON
         }
       })
-      
-      // Guardar datos de la respuesta en el state
-      // response.data contiene el objeto JSON del backend
+
+
       semanas.value = response.data.semanas      // Array de semanas
       nombreMes.value = response.data.nombre_mes // "diciembre"
-      
-      // Log para debugging en consola del navegador
-      console.log('Semanas cargadas:', semanas.value.length)
+
     } catch (err) {
       error.value = 'Error al cargar las semanas'
       console.error('Error completo:', err)
@@ -186,16 +179,16 @@ export const useCitasStore = defineStore('citas', () => {
   function cambiarPeriodo(año, mes) {
     // Actualizar el año seleccionado en el state
     añoSeleccionado.value = año
-    
+
     // Actualizar el mes seleccionado en el state
     mesSeleccionado.value = mes
-    
+
     // Limpiar la selección de semana anterior
     // Esto es importante para evitar que se muestre una semana del mes anterior
     semanaSeleccionada.value = null
     fechaInicioSemana.value = null
     fechaFinSemana.value = null
-    
+
     // Cargar las semanas del nuevo período desde el backend
     // Retorna la promesa para que se pueda hacer await en el componente
     // Ejemplo en componente: await store.cambiarPeriodo(2025, 12)
@@ -223,10 +216,10 @@ export const useCitasStore = defineStore('citas', () => {
     // Guardar el número de semana seleccionada en el state
     // Esto hace que diasDeLaSemanaSeleccionada (getter) se recalcule automáticamente
     semanaSeleccionada.value = numeroSemana
-    
+
     // Buscar la semana completa en el array para obtener toda su información
     const semana = semanas.value.find(s => s.numero === numeroSemana)
-    
+
     // Si se encontró la semana, mostrar información de debugging en consola
     if (semana) {
       console.log('Semana seleccionada en store:', {
@@ -262,10 +255,10 @@ export const useCitasStore = defineStore('citas', () => {
   function setRangoSemana(fechaInicio, fechaFin) {
     // Guardar fecha de inicio en el state
     fechaInicioSemana.value = fechaInicio  // "2025-12-08"
-    
+
     // Guardar fecha de fin en el state
     fechaFinSemana.value = fechaFin        // "2025-12-14"
-    
+
     // Log para debugging - útil para verificar que las fechas se guardaron correctamente
     console.log('Rango de semana guardado:', {
       inicio: fechaInicioSemana.value,
@@ -294,13 +287,13 @@ export const useCitasStore = defineStore('citas', () => {
   function limpiarFiltroSemana() {
     // Resetear número de semana seleccionada
     semanaSeleccionada.value = null
-    
+
     // Resetear fecha de inicio
     fechaInicioSemana.value = null
-    
+
     // Resetear fecha de fin
     fechaFinSemana.value = null
-  
+
   }
 
 
@@ -316,68 +309,84 @@ export const useCitasStore = defineStore('citas', () => {
   // - State: store.semanas, store.loading, etc.
   // - Getters: store.diasDeLaSemanaSeleccionada
   // - Actions: store.cargarSemanas(), store.seleccionarSemana(2), etc.
-  
+
 
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 🆕 NUEVAS FUNCIONALIDADES PARA HORARIOS - AGREGAR AL FINAL DEL STORE
+  //  NUEVAS FUNCIONALIDADES PARA HORARIOS - AGREGAR AL FINAL DEL STORE
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 🆕 STATE ADICIONAL - Variables para horarios
+  //  STATE ADICIONAL - Variables para horarios
   // ─────────────────────────────────────────────────────────────────────────
-  
+
   // Array de horarios disponibles del día seleccionado
-  const horariosDisponibles = ref([])
-  
+  // const horariosDisponibles = ref([])
+  const horariosDisponibles = ref({
+    fecha: null,
+    total_doctores: 0,
+    total_bloques: 0,
+    doctores: []
+  })
+
   // Estado de carga de horarios
   const loadingHorarios = ref(false)
-  
+
   // Error al cargar horarios
   const errorHorarios = ref(null)
-  
+
   // Día actualmente seleccionado para ver horarios
   const diaSeleccionado = ref(null)
 
   // ─────────────────────────────────────────────────────────────────────────
-  // 🆕 ACTIONS - Funciones para gestión de horarios
+  //  ACTIONS - Funciones para gestión de horarios
   // ─────────────────────────────────────────────────────────────────────────
-  
-  /**
-   * 🆕 Cargar horarios disponibles de un día específico
-   * @param {string} fecha - Fecha en formato ISO (YYYY-MM-DD)
-   * @returns {Promise<Array>} - Array de horarios disponibles
-   */
+
   async function cargarHorarios(fecha) {
     loadingHorarios.value = true
     errorHorarios.value = null
     diaSeleccionado.value = fecha
-    
+
     try {
       const token = localStorage.getItem('token')
-      
-      console.log('🔄 Cargando horarios para:', fecha)
-      
+
       const response = await api.get('citas/horarios-disponibles', {
         params: {
-          fecha: fecha
+          fecha: fecha  //  Enviando la fecha como parámetro
         },
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       })
-      
-      horariosDisponibles.value = response.data.horarios || []
-      
-      console.log('✅ Horarios cargados desde store:', horariosDisponibles.value.length)
-      
+
+      console.log(' Respuesta del backend:', response.data)
+
+      //  Guardar la estructura completa
+      horariosDisponibles.value = {
+        fecha: response.data.fecha,
+        total_doctores: response.data.total_doctores || 0,
+        total_bloques: response.data.total_bloques || 0,
+        doctores: response.data.doctores || []
+      }
+
+
+
       return horariosDisponibles.value
-      
+
     } catch (err) {
       errorHorarios.value = 'No se pudieron cargar los horarios disponibles'
-      console.error('❌ Error al cargar horarios:', err)
-      horariosDisponibles.value = []
+      console.error(' Error al cargar horarios:', err)
+      console.error(' Detalles del error:', err.response?.data)
+
+      // Resetear a estructura vacía
+      horariosDisponibles.value = {
+        fecha: fecha,
+        total_doctores: 0,
+        total_bloques: 0,
+        doctores: []
+      }
+
       throw err
     } finally {
       loadingHorarios.value = false
@@ -385,13 +394,16 @@ export const useCitasStore = defineStore('citas', () => {
   }
 
   /**
-   * 🆕 Limpiar horarios cargados
+   *  Limpiar horarios cargados
    */
   function limpiarHorarios() {
-    horariosDisponibles.value = []
-    loadingHorarios.value = false
-    errorHorarios.value = null
-    diaSeleccionado.value = null
+    horariosDisponibles.value = {
+      fecha: null,
+      total_doctores: 0,
+      total_bloques: 0,
+      doctores: []
+    }
+    // ✅ Resetea a la estructura completa vacía
   }
 
   /**
@@ -402,30 +414,28 @@ export const useCitasStore = defineStore('citas', () => {
    */
   async function agendarCita(horarioId, datosPaciente = {}) {
     try {
-      const token = localStorage.getItem('token')
-      
+      // Importar authStore para acceder a getCsrfToken
+      const authStore = useAuthStore()
+
+      // CRÍTICO: Obtener CSRF token antes de POST
+      await authStore.getCsrfToken()
+
       console.log('📝 Agendando cita:', { horarioId, datosPaciente })
-      
+
       const response = await api.post('citas/agendar', {
         horario_id: horarioId,
-        paciente_id: datosPaciente.paciente_id || null,
         observaciones: datosPaciente.observaciones || null
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
       })
-      
+
       console.log('✅ Cita agendada exitosamente')
-      
+
       // Recargar horarios para actualizar disponibilidad
       if (diaSeleccionado.value) {
         await cargarHorarios(diaSeleccionado.value)
       }
-      
+
       return response.data
-      
+
     } catch (err) {
       console.error('❌ Error al agendar cita:', err)
       throw err
@@ -439,33 +449,30 @@ export const useCitasStore = defineStore('citas', () => {
    */
   async function cancelarCita(horarioId) {
     try {
-      const token = localStorage.getItem('token')
-      
+      const authStore = useAuthStore()
+
+      // CRÍTICO: Obtener CSRF token antes de POST
+      await authStore.getCsrfToken()
+
       console.log('🗑️ Cancelando cita:', horarioId)
-      
-      const response = await api.post(`citas/cancelar/${horarioId}`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      })
-      
+
+      const response = await api.post(`citas/cancelar/${horarioId}`)
+
       console.log('✅ Cita cancelada exitosamente')
-      
-      // Recargar horarios para actualizar disponibilidad
+
       if (diaSeleccionado.value) {
         await cargarHorarios(diaSeleccionado.value)
       }
-      
+
       return response.data
-      
+
     } catch (err) {
       console.error('❌ Error al cancelar cita:', err)
       throw err
     }
   }
 
-return {
+  return {
     // ─────────────────────────────────────────────────────────────────────────
     // 📦 STATE - Variables Reactivas
     // ─────────────────────────────────────────────────────────────────────────
@@ -479,14 +486,14 @@ return {
     semanaSeleccionada,   // Number: número de semana activa o null
     fechaInicioSemana,    // String: fecha ISO de inicio o null
     fechaFinSemana,       // String: fecha ISO de fin o null
-    
+
     // ─────────────────────────────────────────────────────────────────────────
     // 🧮 GETTERS - Valores Computados
     // ─────────────────────────────────────────────────────────────────────────
     // Acceso desde componentes: store.semanasDelMes
     semanasDelMes,                  // Computed: alias de semanas
     diasDeLaSemanaSeleccionada,     // Computed: solo días de semana activa
-    
+
     // ─────────────────────────────────────────────────────────────────────────
     // ⚡ ACTIONS - Funciones
     // ─────────────────────────────────────────────────────────────────────────
@@ -496,7 +503,7 @@ return {
     seleccionarSemana,       // Sync: marcar una semana como seleccionada
     setRangoSemana,          // Sync: guardar rango de fechas
     limpiarFiltroSemana,      // Sync: resetear selección de semana
-      horariosDisponibles,
+    horariosDisponibles,
     loadingHorarios,
     errorHorarios,
     diaSeleccionado,
@@ -506,4 +513,4 @@ return {
     cancelarCita
   }
 })
-  
+
