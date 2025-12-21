@@ -22,7 +22,7 @@ export const useHorasTomadasStore = defineStore('horasTomadas', () => {
     // ═══════════════════════════════════════════════════════════════
 
     /**
-     * 🧪 TEST: Cargar citas tomadas desde el backend
+     *  TEST: Cargar citas tomadas desde el backend
      * 
      * Endpoint esperado: GET /api/citas/tomadas
      * 

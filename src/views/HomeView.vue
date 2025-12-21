@@ -30,6 +30,11 @@ import { RouterLink } from 'vue-router'
         <h3>💉 Horas Reservadas</h3>
         <p>Control de horas Reservadas</p>
       </RouterLink>
+
+      <RouterLink to="/gestion-horas" class="card">
+        <h3>💉 Gestion Horas Doctores</h3>
+        <p>Control de horas Doctores</p>
+      </RouterLink>
     </div>
   </div>
 </template>

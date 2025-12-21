@@ -84,7 +84,7 @@ const store = useHorasTomadasStore()
  * Recargar citas
  */
 const recargar = async () => {
-  console.log('🔄 Recargando citas...')
+  console.log(' Recargando citas...')
   await store.cargarCitas()
 }
 

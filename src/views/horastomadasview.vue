@@ -1,14 +1,14 @@
 <template>
   <div class="horas-tomadas-view">
-
     <!-- Título -->
     <v-card>
       <v-card-title>
         <div class="d-flex justify-space-between align-center">
-          <span class="text-h5">Horas Tomadas</span>
-
-          <!-- Botón recargar -->
-          <v-btn color="primary" variant="tonal" prepend-icon="mdi-refresh" @click="recargar">
+          <span class="text-h5">
+            <v-icon class="mr-2">mdi-calendar-clock</v-icon>
+            Horas Tomadas
+          </span>
+          <v-btn color="primary" variant="tonal" prepend-icon="mdi-refresh" @click="recargar" :loading="store.loading">
             Recargar
           </v-btn>
         </div>
@@ -16,65 +16,69 @@
       <v-divider></v-divider>
     </v-card>
 
-    <!-- Lista de citas -->
-    <v-card class="mt-4">
-
-      <!-- Loading -->
-      <div v-if="store.loading" class="text-center py-12">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <p class="mt-4">Cargando...</p>
+    <!-- Loading -->
+    <v-card v-if="store.loading && store.citas.length === 0" class="mt-4">
+      <div class="text-center py-12">
+        <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+        <p class="mt-4 text-h6">Cargando citas...</p>
       </div>
-
-      <!-- Error -->
-      <v-alert v-else-if="store.error" type="error" variant="tonal" class="ma-4">
-        {{ store.error }}
-      </v-alert>
-
-      <!-- Lista -->
-      <v-list v-else>
-        <v-list-item v-for="cita in store.citas" :key="cita.id">
-          <template v-slot:prepend>
-            <v-avatar color="primary">
-              <v-icon color="white">mdi-calendar-check</v-icon>
-            </v-avatar>
-          </template>
-
-          <v-list-item-title>
-            {{ cita.paciente_nombre }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            {{ formatearFecha(cita.fecha) }} - {{ formatearHora(cita.hora) }} - Dr. {{ cita.doctor_nombre }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-chip :color="getColorEstado(cita.estado)" size="small">
-              {{ cita.estado }}
-            </v-chip>
-          </template>
-        </v-list-item>
-
-        <!-- Sin datos -->
-        <v-list-item v-if="store.citas.length === 0">
-          <v-list-item-title class="text-center text-grey py-8">
-            No hay citas agendadas
-          </v-list-item-title>
-        </v-list-item>
-      </v-list>
     </v-card>
 
+    <!-- Error -->
+    <v-alert v-else-if="store.error" type="error" variant="tonal" class="mt-4" closable
+      @click:close="store.error = null">
+      {{ store.error }}
+    </v-alert>
+
+    <!-- Calendario -->
+    <div v-else class="mt-4">
+      <CalendarioCitas :citas="store.citas" @click:cita="mostrarDetalleCita" @change:range="onRangeChange" />
+    </div>
+
+    <!-- Dialog de detalle - FUERA de cualquier v-if/v-else -->
+    <DetalleCitaDialog v-model="dialogDetalle" :cita="citaSeleccionada" />
+
+    <!-- DEBUG: Mostrar estado actual -->
+    <v-card class="mt-4 pa-4" color="grey-lighten-4">
+      <div class="text-caption">
+        <strong>🔍 DEBUG:</strong><br>
+        dialogDetalle: {{ dialogDetalle }}<br>
+        citaSeleccionada: {{ citaSeleccionada?.paciente_nombre || 'null' }}
+      </div>
+    </v-card>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useHorasTomadasStore } from '@/stores/horasTomadasStore'
+import CalendarioCitas from '@/components/horastomadas/CalendarioCitas.vue'
+import DetalleCitaDialog from '@/components/horastomadas/DetalleCitaDialog.vue'
 
 // ══════════════════════════════════════════════════════════════
 // STORE
 // ══════════════════════════════════════════════════════════════
 
 const store = useHorasTomadasStore()
+
+// ══════════════════════════════════════════════════════════════
+// REFS
+// ══════════════════════════════════════════════════════════════
+
+const dialogDetalle = ref(false)
+const citaSeleccionada = ref(null)
+
+// ══════════════════════════════════════════════════════════════
+// WATCHERS PARA DEBUG
+// ══════════════════════════════════════════════════════════════
+
+watch(dialogDetalle, (newVal) => {
+  console.log('👁️ WATCH - dialogDetalle cambió a:', newVal)
+})
+
+watch(citaSeleccionada, (newVal) => {
+  console.log('👁️ WATCH - citaSeleccionada cambió a:', newVal)
+})
 
 // ══════════════════════════════════════════════════════════════
 // FUNCIONES
@@ -84,39 +88,33 @@ const store = useHorasTomadasStore()
  * Recargar citas
  */
 const recargar = async () => {
-  console.log(' Recargando citas...')
+  console.log('🔄 Recargando citas...')
   await store.cargarCitas()
 }
 
 /**
- * Formatear fecha
+ * Mostrar detalle de cita
  */
-const formatearFecha = (fecha) => {
-  return new Date(fecha + 'T00:00:00').toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  })
+const mostrarDetalleCita = (cita) => {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('✅ EVENTO RECIBIDO EN PADRE')
+  console.log('📦 Cita recibida:', cita)
+  console.log('🔧 Antes - dialogDetalle:', dialogDetalle.value)
+  console.log('🔧 Antes - citaSeleccionada:', citaSeleccionada.value)
+
+  citaSeleccionada.value = cita
+  dialogDetalle.value = true
+
+  console.log('🔧 Después - dialogDetalle:', dialogDetalle.value)
+  console.log('🔧 Después - citaSeleccionada:', citaSeleccionada.value)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 }
 
 /**
- * Formatear hora
+ * Cuando cambia el rango del calendario
  */
-const formatearHora = (hora) => {
-  return hora.substring(0, 5) // "09:00:00" → "09:00"
-}
-
-/**
- * Color según estado
- */
-const getColorEstado = (estado) => {
-  const colores = {
-    'confirmada': 'success',
-    'pendiente': 'warning',
-    'cancelada': 'error',
-    'completada': 'info'
-  }
-  return colores[estado] || 'default'
+const onRangeChange = ({ start, end }) => {
+  console.log('📅 Rango cambió:', start, end)
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -125,7 +123,11 @@ const getColorEstado = (estado) => {
 
 onMounted(async () => {
   console.log('🚀 HorasTomadasView montado')
-  await store.cargarCitas()
+  console.log('📊 Citas actuales:', store.citas.length)
+
+  if (store.citas.length === 0) {
+    await store.cargarCitas()
+  }
 })
 </script>
 

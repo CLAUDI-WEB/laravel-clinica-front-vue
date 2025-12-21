@@ -21,6 +21,7 @@
                                 </v-tabs>
 
                                 <v-window v-model="tab" class="mt-6">
+                                    <!-- TAB LOGIN -->
                                     <v-window-item value="login">
                                         <v-form @submit.prevent="handleLogin" ref="loginForm">
                                             <v-text-field v-model="loginData.email" label="Email" type="email"
@@ -45,6 +46,7 @@
                                         </v-form>
                                     </v-window-item>
 
+                                    <!-- TAB REGISTER -->
                                     <v-window-item value="register">
                                         <v-form @submit.prevent="handleRegister" ref="registerForm">
                                             <v-text-field v-model="registerData.name" label="Nombre completo"
@@ -97,14 +99,19 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const authStore = useAuthStore()
 const router = useRouter()
+const authStore = useAuthStore()
+
+// ══════════════════════════════════════════════════════════════
+// REFS
+// ══════════════════════════════════════════════════════════════
 
 const tab = ref('login')
 const showPassword = ref(false)
+
 const loginForm = ref(null)
 const registerForm = ref(null)
 
@@ -122,36 +129,60 @@ const registerData = ref({
     password_confirmation: ''
 })
 
+// ══════════════════════════════════════════════════════════════
+// VALIDACIONES
+// ══════════════════════════════════════════════════════════════
+
 const rules = {
     required: value => !!value || 'Campo requerido',
-    email: value => /.+@.+\..+/.test(value) || 'Email inválido',
-    minLength: value => value.length >= 8 || 'Mínimo 8 caracteres',
-    passwordMatch: value => value === registerData.value.password || 'Las contraseñas no coinciden'
+    email: value => {
+        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        return pattern.test(value) || 'Email inválido'
+    },
+    minLength: value => value.length >= 6 || 'Mínimo 6 caracteres',
+    passwordMatch: value => {
+        return value === registerData.value.password || 'Las contraseñas no coinciden'
+    }
 }
 
-const handleLogin = async () => {
-    const { valid } = await loginForm.value.validate()
+// ══════════════════════════════════════════════════════════════
+// FUNCIONES
+// ══════════════════════════════════════════════════════════════
 
-    if (valid) {
-        try {
-            await authStore.login(loginData.value)
-            router.push({ name: 'home' })
-        } catch (error) {
-            console.error('Error al iniciar sesión:', error)
-        }
+const handleLogin = async () => {
+    try {
+        // Validar formulario
+        const { valid } = await loginForm.value.validate()
+        if (!valid) return
+
+        // Login con el store
+        await authStore.login({
+            email: loginData.value.email,
+            password: loginData.value.password
+        })
+
+        console.log('✅ Login exitoso, redirigiendo...')
+        router.push('/dashboard')
+
+    } catch (error) {
+        console.error('❌ Error en handleLogin:', error)
     }
 }
 
 const handleRegister = async () => {
-    const { valid } = await registerForm.value.validate()
+    try {
+        // Validar formulario
+        const { valid } = await registerForm.value.validate()
+        if (!valid) return
 
-    if (valid) {
-        try {
-            await authStore.register(registerData.value)
-            router.push({ name: 'home' })
-        } catch (error) {
-            console.error('Error al registrarse:', error)
-        }
+        // Registro con el store
+        await authStore.register(registerData.value)
+
+        console.log('✅ Registro exitoso, redirigiendo...')
+        router.push('/dashboard')
+
+    } catch (error) {
+        console.error('❌ Error en handleRegister:', error)
     }
 }
 </script>
