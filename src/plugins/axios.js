@@ -1,11 +1,10 @@
 import axios from 'axios'
 import router from '@/router'
 
-// Configuración base de axios
 const axiosInstance = axios.create({
     baseURL: 'http://localhost:8000',
-    withCredentials: true,
-    withXSRFToken: true,
+    // ❌ ELIMINAR: withCredentials: true,
+    // ❌ ELIMINAR: withXSRFToken: true,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -13,9 +12,14 @@ const axiosInstance = axios.create({
     }
 })
 
-// Interceptor de requests (opcional para debugging)
+// ✅ INTERCEPTOR: Agregar token
 axiosInstance.interceptors.request.use(
     config => {
+        const token = localStorage.getItem('token')
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
+
         console.log('📤 Request:', config.method.toUpperCase(), config.url)
         return config
     },
@@ -25,7 +29,7 @@ axiosInstance.interceptors.request.use(
     }
 )
 
-// Interceptor de responses
+// ✅ INTERCEPTOR: Manejar errores
 axiosInstance.interceptors.response.use(
     response => {
         console.log('📥 Response:', response.status, response.config.url)
@@ -34,9 +38,13 @@ axiosInstance.interceptors.response.use(
     error => {
         console.error('❌ Response Error:', error.response?.status, error.response?.data)
 
-        // Redirigir al login si no está autenticado
         if (error.response?.status === 401) {
-            router.push('/login')
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+
+            if (router.currentRoute.value.path !== '/login') {
+                router.push('/login')
+            }
         }
 
         return Promise.reject(error)

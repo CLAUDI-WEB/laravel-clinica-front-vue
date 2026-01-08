@@ -3,22 +3,15 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'
-import axios from './plugins/axios' // ⬅️ SOLO ESTE IMPORT
+import axios from './plugins/axios'
 
 // PrimeVue v4
 import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import 'primeicons/primeicons.css'
 
-// ❌ ELIMINAR ESTE IMPORT DUPLICADO
-// import axios from 'axios'
-
-// ❌ ELIMINAR TODA ESTA CONFIGURACIÓN (ya está en plugins/axios.js)
-// axios.defaults.baseURL = 'http://localhost:8000'
-// axios.defaults.withCredentials = true
-// axios.defaults.withXSRFToken = true
-// axios.defaults.headers.common['Accept'] = 'application/json'
-// axios.defaults.headers.common['Content-Type'] = 'application/json'
+// ✅ IMPORTAR authStore
+import { useAuthStore } from './stores/auth'
 
 // Interceptor para manejar errores de autenticación
 axios.interceptors.response.use(
@@ -63,3 +56,11 @@ app.use(PrimeVue, {
 })
 
 app.mount('#app')
+
+// ✅ CARGAR USUARIO AL INICIAR (después de mount)
+const authStore = useAuthStore()
+authStore.loadUserFromStorage()
+
+console.log('🚀 App iniciada')
+console.log('👤 Usuario:', authStore.user?.nombre || 'No autenticado')
+console.log('🔐 Token:', authStore.token ? 'Presente' : 'Ausente')

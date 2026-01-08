@@ -349,7 +349,7 @@ export const useCitasStore = defineStore('citas', () => {
 
     try {
       const token = localStorage.getItem('token')
-
+      //va a citas porque son para las citas de pacientes
       const response = await api.get('citas/horarios-disponibles', {
         params: {
           fecha: fecha  //  Enviando la fecha como parámetro
@@ -414,11 +414,9 @@ export const useCitasStore = defineStore('citas', () => {
    */
   async function agendarCita(horarioId, datosPaciente = {}) {
     try {
-      // Importar authStore para acceder a getCsrfToken
-      const authStore = useAuthStore()
-
-      // CRÍTICO: Obtener CSRF token antes de POST
-      await authStore.getCsrfToken()
+      // ❌ ELIMINAR: const authStore = useAuthStore()
+      // ❌ ELIMINAR: await authStore.getCsrfToken()
+      // ✅ El interceptor de axios agrega el token automáticamente
 
       console.log('📝 Agendando cita:', { horarioId, datosPaciente })
 
@@ -427,7 +425,7 @@ export const useCitasStore = defineStore('citas', () => {
         observaciones: datosPaciente.observaciones || null
       })
 
-      console.log('✅ Cita agendada exitosamente')
+      console.log('✅ Cita agendada exitosamente:', response.data)
 
       // Recargar horarios para actualizar disponibilidad
       if (diaSeleccionado.value) {
@@ -437,10 +435,11 @@ export const useCitasStore = defineStore('citas', () => {
       return response.data
 
     } catch (err) {
-      console.error('❌ Error al agendar cita:', err)
+      console.error('❌ Error al agendar cita:', err.response?.data || err)
       throw err
     }
   }
+
 
   /**
    * 🆕 Cancelar una cita
@@ -449,10 +448,8 @@ export const useCitasStore = defineStore('citas', () => {
    */
   async function cancelarCita(horarioId) {
     try {
-      const authStore = useAuthStore()
-
-      // CRÍTICO: Obtener CSRF token antes de POST
-      await authStore.getCsrfToken()
+      // ❌ ELIMINAR: const authStore = useAuthStore()
+      // ❌ ELIMINAR: await authStore.getCsrfToken()
 
       console.log('🗑️ Cancelando cita:', horarioId)
 
@@ -467,7 +464,7 @@ export const useCitasStore = defineStore('citas', () => {
       return response.data
 
     } catch (err) {
-      console.error('❌ Error al cancelar cita:', err)
+      console.error('❌ Error al cancelar cita:', err.response?.data || err)
       throw err
     }
   }
